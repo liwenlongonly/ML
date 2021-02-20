@@ -1,6 +1,13 @@
+# load required library
 from sklearn.datasets import load_diabetes
 import matplotlib.pyplot as plt
 import numpy as np
+
+# Assignment 1 - Linear Regression
+# Package Prereqs: scikit-learn, matplotlib, numpy
+# Implement what is asked at the TODO section.
+# !! Please notice no library versions of linear regression are allowed.
+
 
 def load_dataset():
     '''
@@ -11,31 +18,6 @@ def load_dataset():
     X, y = load_diabetes(return_X_y=True)
     return X[:60, 2], y[:60]
 
-def plot_data(X, y):
-    '''
-    Draw scatter plot using raw data.
-    '''
-
-    #########################################################################
-    # Full Mark: 10                                                         #
-    # TODO:                                                                 #
-    # 1. make a scatter plot of the raw data                                #
-    # 2. set title for the plot                                             #
-    # 3. set label for X,y axis                                             #
-    # e.g.,                                                                 #
-    #https://matplotlib.org/3.2.0/api/_as_gen/matplotlib.pyplot.scatter.html#
-    #########################################################################
-    plt.title("Linear Regression Data")
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.plot(X, y, "ob")
-
-    #########################################################################
-    #                       END OF YOUR CODE                                #
-    #########################################################################
-
-    # return the plt object
-    return plt
 
 def train_test_split(X, y):
     '''
@@ -58,11 +40,40 @@ def train_test_split(X, y):
     X[:, 0] = np.ones(X.shape[0])
     X_train = X[:40]
     X_test = X[40:]
+
+    #########################################################################
+    #                       END OF YOUR CODE                                #
+    #########################################################################
+    
+    return X_train, X_test, y_train, y_test
+
+
+def plot_data(X, y):
+    '''
+    Draw scatter plot using raw data.
+    '''
+
+    #########################################################################
+    # Full Mark: 10                                                         #
+    # TODO:                                                                 #
+    # 1. make a scatter plot of the raw data                                #
+    # 2. set title for the plot                                             #
+    # 3. set label for X,y axis                                             #
+    # e.g.,                                                                 #
+    #https://matplotlib.org/3.2.0/api/_as_gen/matplotlib.pyplot.scatter.html#
+    #########################################################################
+
+    plt.title("Linear Regression Data")
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.plot(X, y, "ob")
+
     #########################################################################
     #                       END OF YOUR CODE                                #
     #########################################################################
 
-    return X_train, X_test, y_train, y_test
+    # return the plt object
+    return plt
 
 
 def cost_function(weights, X, y):
@@ -78,15 +89,18 @@ def cost_function(weights, X, y):
     #                                                                       #
     # (Hint: Use numpy functions)                                           #
     #########################################################################
+
     y_ = weights * X
     y_ = y_[:, 1] + y_[:, 0]
     cost = 1 / X.shape[0] * np.sum(np.square(y - y_))
+    
     #########################################################################
     #                       END OF YOUR CODE                                #
     #########################################################################
 
     # return cost
     return cost
+
 
 def gradient_descent(weights, X, y):
     '''
@@ -96,10 +110,10 @@ def gradient_descent(weights, X, y):
     # define your learning_rate and epoch
     lr = 0.1
     epoch = 20000
-
+    
     # define cost
     cost_list = []
-
+    
     # for loop
     for i in range(epoch):
         #########################################################################
@@ -109,9 +123,10 @@ def gradient_descent(weights, X, y):
         # 2. append the updated cost to cost list                               #
         # (Hint: Use numpy functions)                                           #
         #########################################################################
+
         cost = cost_function(weights, X, y)
         cost_list.append(cost)
-        g_w = (2.0 / X.shape[0]) * np.sum(weights[1] * X[:, 1] * X[:, 1] - y * X[:, 1] + weights[0]*X[:, 1])
+        g_w = (2.0 / X.shape[0]) * np.sum(weights[1] * X[:, 1] * X[:, 1] - y * X[:, 1] + weights[0] * X[:, 1])
         g_b = (2.0 / X.shape[0]) * np.sum(weights[0] - y + weights[1] * X[:, 1])
         weights[1] = weights[1] - lr * g_w
         weights[0] = weights[0] - lr * g_b
@@ -128,7 +143,7 @@ def gradient_descent(weights, X, y):
         #########################################################################
         #                       END OF YOUR CODE                                #
         #########################################################################
-
+        
     # return updated weights and cost list
     return weights, cost_list
 
@@ -145,16 +160,19 @@ def plot_iteration(cost, epoch=20000):
     # 2. set title and labels for the plot                                  #
     # (Hint: Use plt.plot function to plot and range(n))                    #
     #########################################################################
+
     plt.title("cost for each iteration")
     plt.xlabel("epoch")
     plt.ylabel("cost")
     plt.plot(range(len(cost)), cost)
+    
     #########################################################################
     #                       END OF YOUR CODE                                #
     #########################################################################
-
+    
     # show plot
     plt.show()
+
 
 def plot_final(weights, X, y):
     '''
@@ -173,6 +191,7 @@ def plot_final(weights, X, y):
     #                         y = w * X + b                                 #
     # 3. plot the curve and set title                                       #
     #########################################################################
+
     y_ = weights[1] * X + weights[0]
     model_plot.plot(X, y_)
 
@@ -182,6 +201,7 @@ def plot_final(weights, X, y):
 
     # show plot
     model_plot.show()
+
 
 def print_test_error(weights, X, y_true):
     '''
@@ -207,7 +227,12 @@ def print_test_error(weights, X, y_true):
     print("Test error: %.4f" % error)
     return error
 
+
 def main():
+    '''
+    ** Do not modify this function. **
+    '''
+
     # Plot raw data points
     X, y = load_dataset()
     plot = plot_data(X, y)
@@ -216,25 +241,16 @@ def main():
     # Split train and test set
     X = np.c_[np.ones(X.size), X]
     X_train, X_test, y_train, y_test = train_test_split(X, y)
-    print("X_train:")
-    print(X_train)
-    print("y_train:")
-    print(y_train)
-    print("X_test")
-    print(X_test)
-    print("y_test")
-    print(y_test)
 
     # initialize weight
     weights = np.ones(X_train.shape[1])
+
     # calculate training cost
     init_cost = cost_function(weights, X_train, y_train)
     print("Initial cost: %.4f" % init_cost)
 
     # gradient descent to find the optimal fit
     weights, cost_list = gradient_descent(weights, X_train, y_train)
-    print(weights)
-    print(cost_list)
 
     # draw the cost change for iterations
     plot_iteration(cost_list)
