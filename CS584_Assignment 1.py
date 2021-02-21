@@ -126,8 +126,8 @@ def gradient_descent(weights, X, y):
 
         cost = cost_function(weights, X, y)
         cost_list.append(cost)
-        g_w = (2.0 / X.shape[0]) * np.sum(weights[1] * X[:, 1] * X[:, 1] - y * X[:, 1] + weights[0] * X[:, 1])
-        g_b = (2.0 / X.shape[0]) * np.sum(weights[0] - y + weights[1] * X[:, 1])
+        g_w = (1.0 / X.shape[0]) * np.sum(weights[1] * X[:, 1] * X[:, 1] - y * X[:, 1] + weights[0] * X[:, 1])
+        g_b = (1.0 / X.shape[0]) * np.sum(weights[0] - y + weights[1] * X[:, 1])
         weights[1] = weights[1] - lr * g_w
         weights[0] = weights[0] - lr * g_b
 
