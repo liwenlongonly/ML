@@ -193,7 +193,7 @@ def plot_final(weights, X, y):
     #########################################################################
 
     y_ = weights[1] * X + weights[0]
-    model_plot.plot(X, y_)
+    model_plot.plot(X, y_, color='r')
 
     #########################################################################
     #                       END OF YOUR CODE                                #
