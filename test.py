@@ -8,5 +8,7 @@ if __name__ == '__main__':
    print(weight[1]*array[:,1] + weight[0])
 
    y = weight * array
-   y = y[:, 0] + y[:, 1]
+   print(y)
+   y_ = np.sum(y, axis=1)
+   # y = y[:, 0] + y[:, 1]
    print(y)
