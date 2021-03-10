@@ -5,10 +5,8 @@ from sklearn.datasets import load_iris
 import scipy.optimize as opt
 
 x, y = load_iris(return_X_y=True)
-# print(x)
 x = x[:100, :2]  # class 0 and 1 balanced
 y = y[:100]
-# print(y)
 
 def draw_data(x, y):
     #########################################################################
@@ -22,20 +20,10 @@ def draw_data(x, y):
     plt.title("Title")
     plt.xlabel("x")
     plt.ylabel("y")
-    class0_x = []
-    class0_y = []
-    class1_x = []
-    class1_y = []
-    for i, val in enumerate(y):
-        if val == 0:
-            class0_x.append(x[i][0])
-            class0_y.append(x[i][1])
-        else:
-            class1_x.append(x[i][0])
-            class1_y.append(x[i][1])
-
-    plt.scatter(class0_x, class0_y, c='r', marker='x', label='class0')
-    plt.scatter(class1_x, class1_y, c='b', marker='o', label='class1')
+    pos = np.where(y == 0)
+    neg = np.where(y == 1)
+    plt.scatter(x[pos, 0], x[pos, 1], marker='x', color='r', label='class0')
+    plt.scatter(x[neg, 0], x[neg, 1], marker='o', color='b', label='class1')
     plt.legend()
     #########################################################################
     #                       END OF YOUR CODE                                #
@@ -52,16 +40,13 @@ def sigmoid(theta, X):
     # TODO:                                                                 #
     # 1. implement the sigmoid function over input theta and X
     #########################################################################
-    y_ = np.sum(X * theta, axis=1)
-    s = 1 / (1 + np.exp(-y_))
+    y_ = np.dot(X, theta)
+    s = 1.0 / (1 + np.exp(-y_))
     #########################################################################
     #                       END OF YOUR CODE                                #
     #########################################################################
 
     return s
-
-def cross_entropy_error(y, t):
-    return -np.sum(t * np.log(y))
 
 # define cost function with sigmoid function
 def cost(theta, X, y):
@@ -70,8 +55,10 @@ def cost(theta, X, y):
     # TODO:                                                                 #
     # 1. implement the cross entropy loss function with sigmoid             #
     #########################################################################
-    y_ = sigmoid(theta, X)
-    co = cross_entropy_error(y_, y)
+    hx = sigmoid(theta, X)
+    if np.sum(1 - hx < 1e-10) != 0:
+        return np.inf
+    co = -np.mean(np.multiply(y, np.log(hx)) + np.multiply(1 - y, np.log(1 - hx)))
     #########################################################################
     #                       END OF YOUR CODE                                #
     #########################################################################
@@ -88,11 +75,41 @@ def gradient(theta, X, y):
     #########################################################################
     y_ = sigmoid(theta, X)
     grad = np.dot(X.T,  y_ - y)/len(X)
-    # print(grad)
     #########################################################################
     #                       END OF YOUR CODE                                #
     #########################################################################
     return grad
+
+# draw decision boudary
+def draw_decision_boudary(final_theta,x,y):
+    #########################################################################
+    # Full Mark: 2                                                          #
+    # TODO:                                                                 #
+    # 1. plot the decision boudary on the raw data                          #
+    # 2. set title for the plot                                             #
+    # 3. set label for x,y axis                                             #
+    # Note, this scatter plot has two different type of points              #
+    #########################################################################
+    plt.title("Title")
+    plt.xlabel("x")
+    plt.ylabel("y")
+    pos = np.where(y == 0)
+    neg = np.where(y == 1)
+    plt.scatter(x[pos, 1], x[pos, 2], marker='x', color='r', label='class0')
+    plt.scatter(x[neg, 1], x[neg, 2], marker='o', color='b', label='class1')
+
+    plot_x = np.array([np.min(x[:, 1]) - 1, np.max(x[:, 1] + 1)])
+    plot_y = -1 / final_theta[2] * (final_theta[1] * plot_x + final_theta[0])
+
+    plt.plot(plot_x, plot_y)
+
+    plt.legend()
+    #########################################################################
+    #                       END OF YOUR CODE                                #
+    #########################################################################
+
+    # show plot
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -106,5 +123,7 @@ if __name__ == '__main__':
     final_theta = result[0]
     final_cost = cost(final_theta, x, y)
     print(final_cost)
+
+    draw_decision_boudary(final_theta, x, y)
 
 
