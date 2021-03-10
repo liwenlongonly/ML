@@ -112,6 +112,43 @@ def draw_decision_boudary(final_theta,x,y):
     plt.show()
 
 
+# predict for new X
+def predict(theta, X):
+    #########################################################################
+    # Full Mark: 1                                                          #
+    # TODO:                                                                 #
+    # 1. predict the value using theta and sigmoid                          #
+    # 2. convert the predicted value to 0/1                                 #
+    # That's how it is called Logistic regression                           #
+    #########################################################################
+    m = len(X)
+    predict_labels = np.zeros((m,))
+    pos = np.where(sigmoid(theta, X) >= 0.5)
+    neg = np.where(sigmoid(theta, X) < 0.5)
+    predict_labels[pos] = 1
+    predict_labels[neg] = 0
+    #########################################################################
+    #                       END OF YOUR CODE                                #
+    #########################################################################
+
+    return predict_labels
+
+
+# calculate accuracy
+def accurate(predictions, y):
+    #########################################################################
+    # Full Mark: 1                                                          #
+    # TODO:                                                                 #
+    # 1. calculate the accuracy value                                       #
+    # Note that you coud not import extra library                           #
+    #########################################################################
+    accuracy_score = np.sum(predictions == y) / len(y)
+    #########################################################################
+    #                       END OF YOUR CODE                                #
+    #########################################################################
+    return accuracy_score
+
+
 if __name__ == '__main__':
     draw_data(x, y)
 
@@ -119,11 +156,15 @@ if __name__ == '__main__':
     theta = np.zeros(x.shape[1])
 
     result = opt.fmin_tnc(func=cost, x0=theta, fprime=gradient, args=(x, y))
-    print(result)
     final_theta = result[0]
     final_cost = cost(final_theta, x, y)
-    print(final_cost)
+    predictions = predict(final_theta, x)
+    accuracy = accurate(predictions, y)
+    print("final cost is " + str(final_cost))
+    print("accuracy is " + str(accuracy))
 
     draw_decision_boudary(final_theta, x, y)
+
+
 
 
