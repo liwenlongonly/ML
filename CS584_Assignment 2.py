@@ -17,7 +17,7 @@ def draw_data(x, y):
     # 3. set label for x,y axis                                             #
     # Note, this scatter plot has two different type of points              #
     #########################################################################
-    plt.title("Title")
+    plt.title("Logistic Regression")
     plt.xlabel("x")
     plt.ylabel("y")
     pos = np.where(y == 0)
@@ -90,7 +90,7 @@ def draw_decision_boudary(final_theta,x,y):
     # 3. set label for x,y axis                                             #
     # Note, this scatter plot has two different type of points              #
     #########################################################################
-    plt.title("Title")
+    plt.title("Logistic Regression")
     plt.xlabel("x")
     plt.ylabel("y")
     pos = np.where(y == 0)
