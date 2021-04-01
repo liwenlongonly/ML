@@ -23,8 +23,8 @@ for j in range(K):
 plt.scatter(X[:, 0], X[:, 1], c=y, s=40, cmap=plt.cm.Spectral)
 plt.show()
 
-# print("X:", X)
-# print("Y:", y)
+print("X:", X)
+print("Y:", y)
 
 h = 10  # 隐藏层的神经元数量
 
@@ -58,6 +58,7 @@ for i in range(10000):
     # softmax
     exp_scores = np.exp(scores)
     probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)  # [N x K]
+    print("probs[range(num_examples), y]：",  probs[range(num_examples), y])
 
     # 计算损失，和之前的一样
     correct_logprobs = -np.log(probs[range(num_examples), y])

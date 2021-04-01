@@ -33,14 +33,17 @@ def init_weights(num_in, num_out):
     ###################################################################################
     # Full Mark: 1                                                                    #
     # TODO:                                                                           #
-    # Implement Xavier/Glorot normal initialization                                   #
+    # Implement Xavier/Glorot uniform initialization                                   #
     #                                                                                 #
     # Hint: you can find the reference here:                                          #
     # https://www.tensorflow.org/api_docs/python/tf/keras/initializers/GlorotNormal   #
     ###################################################################################
-    W[0, :] = np.random.normal(loc=0., scale=1., size=[num_out]) / np.sqrt(num_in)
-    W[1:, :] = np.random.normal(loc=0., scale=1., size=[num_in, num_out]) / np.sqrt(num_in)
+
+    a = np.sqrt(6. / (num_in + num_out))
+    W[0, :] = np.random.uniform(low=-a, high=a, size=[num_out, num_in])
+    W[1:, :] = np.random.uniform(low=-a, high=a, size=[num_out])
     print("Init W:", W)
+
     ###################################################################################
     #                       END OF YOUR CODE                                          #
     ###################################################################################
@@ -214,8 +217,10 @@ def loss_funtion(W, X, y, num_feature, num_hidden, num_output, L2_lambda):
     a_hidden = y_["a_hidden"]
     z_output = y_["z_output"]
     a_output = y_["a_output"]
-    L = -np.mean(np.multiply(y, np.log(a_output)) + np.multiply(1 - y, np.log(1 - a_output))) + regularization_loss
-
+    num_examples = X.shape[0]
+    correct_logprobs = -np.log(a_output[range(num_examples), y])
+    data_loss = np.sum(correct_logprobs) / num_examples
+    L = data_loss + regularization_loss
 
     W_hidden_grad = 0
     W_output_grad = 0
