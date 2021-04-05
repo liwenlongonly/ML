@@ -217,9 +217,11 @@ def loss_funtion(W, X, y, num_feature, num_hidden, num_output, L2_lambda):
     a_hidden = y_["a_hidden"]
     z_output = y_["z_output"]
     a_output = y_["a_output"]
-    num_examples = X.shape[0]
-    correct_logprobs = -np.log(a_output[range(num_examples), y])
-    data_loss = np.sum(correct_logprobs) / num_examples
+    y_onehot = np.zeros((y.shape[0], num_output))
+    y_onehot[np.arange(y.shape[0]), y] = 1
+    if np.sum(1 - a_output < 1e-10) != 0:
+        return np.inf
+    data_loss = -np.mean(np.multiply(y, np.log(a_output)) + np.multiply(1 - y, np.log(1 - a_output)))
     L = data_loss + regularization_loss
 
     W_hidden_grad = 0
