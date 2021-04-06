@@ -41,6 +41,8 @@ if __name__ == '__main__':
 
     nn = NeuralNetwork()  # 实例化网络类
     nn.add_layer(Layer(2, 25, 'tanh'))  # 隐藏层1, 2=>25
+    nn.add_layer(Layer(25, 25, 'tanh'))  # 隐藏层1, 25=>25
+    nn.add_layer(Layer(25, 25, 'tanh'))  # 隐藏层1, 25=>25
     nn.add_layer(Layer(25, 2, 'sigmoid'))  # 隐藏层2, 25=>2
     learning_rate = 0.01
     max_epochs = 1000

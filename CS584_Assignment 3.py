@@ -102,8 +102,7 @@ def sigmoid_gradient(x):
     #                                                                                 #
     ###################################################################################
 
-    s = sigmoid(x)
-    grad = s * (1 - s)
+    grad = x * (1 - x)
 
     ###################################################################################
     #                       END OF YOUR CODE                                          #
@@ -123,8 +122,7 @@ def tanh_gradient(x):
     #                                                                                 #
     ###################################################################################
 
-    t = tanh(x)
-    grad = 1 - np.square(t)
+    grad = 1 - np.square(x)
 
     ###################################################################################
     #                       END OF YOUR CODE                                          #
@@ -212,20 +210,20 @@ def loss_funtion(W, X, y, num_feature, num_hidden, num_output, L2_lambda):
     ##########################################################################################
 
     regularization_loss = (L2_lambda / 2*m) * (np.sum(np.square(W_hidden[1:, :].ravel())) + np.sum(np.square(W_output[1:, :].ravel())))
-    y_ = forward((W_hidden, W_output), X)
+    y_ = forward((W_hidden, W_output), X_input)
     z_hidden = y_["z_hidden"]
     a_hidden = y_["a_hidden"]
     z_output = y_["z_output"]
     a_output = y_["a_output"]
     y_onehot = np.zeros((y.shape[0], num_output))
     y_onehot[np.arange(y.shape[0]), y] = 1
-    if np.sum(1 - a_output < 1e-10) != 0:
-        return np.inf
     data_loss = -np.mean(np.multiply(y, np.log(a_output)) + np.multiply(1 - y, np.log(1 - a_output)))
     L = data_loss + regularization_loss
 
-    W_hidden_grad = 0
-    W_output_grad = 0
+    d_output = y_onehot - y
+    d_hidden = d_output * W_output[:, 1:] * tanh_gradient(z_hidden)
+    W_output_grad = d_output.T * a_hidden
+    W_hidden_grad = d_hidden.T * X_input
 
     ###################################################################################
     #                       END OF YOUR CODE                                          #
@@ -264,7 +262,10 @@ def optimize(initial_W, X, y, num_epoch, num_feature, num_hidden, num_output, L2
     # That is why we unroll the initial weights into a single long vector.                    #
     ###########################################################################################
 
-    W_final = 0
+    def loss(w):
+        return loss_funtion(w, X, y, num_feature, num_hidden, num_output, L2_lambda)
+
+    W_final = minimize(fun=loss, x0=initial_W, method='TNC', jac=True, options=options)
 
     ###################################################################################
     #                       END OF YOUR CODE                                          #
@@ -295,7 +296,9 @@ def predict(X_test, y_test, W):
     #                                                                                 #
     ###################################################################################
 
-    acc = 0
+    y_ = forward(W, test_input)
+    pred = np.argmax(y_, axis=1)
+    acc = np.sum(pred == y_test) / len(y_test)
 
     ###################################################################################
     #                       END OF YOUR CODE                                          #
@@ -328,8 +331,8 @@ if __name__ == '__main__':
     print("initial_W:", initial_W)
 
     # Neural network learning
-    # W = optimize(initial_W, X_train, y_train, NUM_EPOCH, NUM_FEATURE, NUM_HIDDEN_UNIT, NUM_OUTPUT_UNIT, L2_lambda)
-    # print("W:", W)
+    W = optimize(initial_W, X_train, y_train, NUM_EPOCH, NUM_FEATURE, NUM_HIDDEN_UNIT, NUM_OUTPUT_UNIT, L2_lambda)
+    print("W:", W)
     # Predict
-    # acc = predict(X_test, y_test, W)
-    # print("Test accuracy:", acc)
+    acc = predict(X_test, y_test, W)
+    print("Test accuracy:", acc)

@@ -15,8 +15,10 @@ if __name__ == '__main__':
    print(np.random.choice(range(10), 10, replace=False))
 
    y_label = np.array([0, 2, 1, 2, 0, 0])
+   print("y_label",y_label)
    y_onehot = np.zeros((y_label.shape[0], 3))
    y_onehot[np.arange(y_label.shape[0]), y_label] = 1
 
    print("y_onehot:", y_onehot)
+   print(np.argmax(y_onehot, axis=1))
 
