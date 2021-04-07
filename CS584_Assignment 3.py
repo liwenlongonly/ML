@@ -231,8 +231,8 @@ def loss_funtion(W, X, y, num_feature, num_hidden, num_output, L2_lambda):
 
     W_hidden[0, :] = 0 #(5, 10)
     W_output[0, :] = 0 #(11, 3)
-    W_hidden_grad += (L2_lambda / m) * W_hidden.T
-    W_output_grad += (L2_lambda / m) * W_output.T
+    W_hidden_grad += (L2_lambda / m) * W_hidden
+    W_output_grad += (L2_lambda / m) * W_output
 
     ###################################################################################
     #                       END OF YOUR CODE                                          #

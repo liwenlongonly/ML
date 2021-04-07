@@ -28,8 +28,8 @@ if __name__ == '__main__':
     X_train, X_test, y_train, y_test = train_test_split(X, y)
 
     nn = NeuralNetwork()  # 实例化网络类
-    nn.add_layer(Layer(4, 25, 'tanh'))  # 隐藏层1, 2=>25
-    nn.add_layer(Layer(25, 3, 'sigmoid'))  # 隐藏层2, 25=>2
+    nn.add_layer(Layer(4, 10, 'tanh'))  # 隐藏层1, 4=>10
+    nn.add_layer(Layer(10, 3, 'sigmoid'))  # 隐藏层2, 10=>4
     learning_rate = 0.01
     max_epochs = 1000
     nn.train(X_train, X_test, y_train, y_test, learning_rate, max_epochs)

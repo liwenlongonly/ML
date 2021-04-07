@@ -22,17 +22,6 @@ def train_test_split(X, y):
     y_train, y_test = y[:train_size], y[train_size:]
     return X_train, X_test, y_train, y_test
 
-def expand_y(y):
-    """
-    设置标签值为向量 例如y[0]=6转化为y[0]=[0,0,0,0,0,1,0,0,0,0]
-    """
-    result = []
-    for i in y:
-        y_array = np.zeros(num_labels)
-        y_array[i-1] = 1
-        result.append(y_array)
-    return np.array(result)
-
 def sigmoid(x):
     res = 1 / (1 + np.exp(-x))
     return res
@@ -56,9 +45,9 @@ def feed_forward(theta, X):
     '''得到每层的输入和输出'''
     t1, t2 = deserialize(theta)   # 提取参数 t1是第一层到第二层的  t2是第二层到第三层的
     a1 = X   #初始值
-    z2 = a1 @ t1   # X乘参数
-    a2 = np.insert(sigmoid(z2), 0, 1, axis=1)  #加a0 并且放入sigmoid函数中
-    z3 = a2 @ t2   #第二层到第三层
+    z2 = a1 @ t1.T   # X乘参数
+    a2 = np.insert(tanh(z2), 0, 1, axis=1)  #加a0 并且放入sigmoid函数中
+    z3 = a2 @ t2.T   #第二层到第三层
     a3 = sigmoid(z3)
     return a1, z2, a2, z3, a3
 
@@ -70,8 +59,10 @@ def cost(theta, X, y):
 def regularized_cost(theta, X, y, l=1):
     '''正则化时忽略每层的偏置项，也就是参数矩阵的第一列'''
     t1, t2 = deserialize(theta)
-    reg = np.sum(t1[1:, :] ** 2) + np.sum(t2[1:, :] ** 2)    # 正则项
-    return l / (2 * len(X)) * reg + cost(theta, X, y)    # 代价函数
+    reg = np.sum(t1[:, 1:] ** 2) + np.sum(t2[:, 1:] ** 2)    # 正则项
+    loss = l / (2 * len(X)) * reg + cost(theta, X, y)  # 代价函数
+    # print("loss:", loss)
+    return loss
 
 def deserialize(seq):
     '''
@@ -79,7 +70,7 @@ def deserialize(seq):
     '''
     hidden_size = hidden_layer_size
     input_size = input_layer_size + 1
-    return seq[:hidden_size*input_size].reshape(input_size, hidden_size), seq[hidden_size*input_size:].reshape(hidden_size+1, num_labels)
+    return seq[:hidden_size*input_size].reshape(hidden_size, input_size), seq[hidden_size*input_size:].reshape(num_labels, hidden_size+1)
 
 def serialize(a, b):
     '''
@@ -99,9 +90,9 @@ def gradient(theta, X, y):
     '''
     t1, t2 = deserialize(theta) # t1:(5, 10) t2:(11, 3)
     a1, z2, a2, z3, h = feed_forward(theta, X)
-    # a1:(150, 5) z2:(150, 10) a2:(150, 11) z3:(150, 3)
+    # a1:(100, 5) z2:(100, 10) a2:(100, 11) z3:(100, 3)
     d3 = h - y  # (150, 3)
-    d2 = d3 @ t2[1:, :].T * sigmoid_gradient(z2)  # (150, 10)
+    d2 = d3 @ t2[:, 1:] * tanh_gradient(z2)  # (100, 10)
     D2 = d3.T @ a2  # (3, 11)
     D1 = d2.T @ a1  # (10, 5)
     D = (1 / len(X)) * serialize(D1, D2)  # (83,)
@@ -134,7 +125,8 @@ def nn_training(X, y):
 
 def accuracy(theta, X, y):
     _, _, _, _, h = feed_forward(res.x, X)
-    pred = np.argmax(h, axis=1) + 1
+    pred = np.argmax(h, axis=1)
+    print("pred:", pred)
     acc = np.sum(pred == y) / len(y)
     print("acc:", acc)
 
@@ -142,13 +134,17 @@ def accuracy(theta, X, y):
 if __name__ == '__main__':
 
     raw_X, raw_y = load_dataset()
-    X = np.insert(raw_X, 0, 1, axis=1)  # 加一列 1 (150, 5)
-    y = expand_y(raw_y)  # (5000, 10)
+    X_train, X_test, y_train, y_test = train_test_split(raw_X, raw_y)
+    X = np.insert(X_train, 0, 1, axis=1)  # 加一列 1 (100, 5)
+    y = np.zeros((y_train.shape[0], num_labels))
+    y[np.arange(y_train.shape[0]), y_train] = 1
 
     # print("X:", X)
     # print("y:", y)
 
     res = nn_training(X, y)  # 慢
     print(res)
+
+    X_ = np.insert(X_test, 0, 1, axis=1)
     # ——————————————4. 检验——————————————————
-    accuracy(res.x, X, raw_y)
+    accuracy(res.x, X_, y_test)
