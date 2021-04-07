@@ -7,7 +7,6 @@ def load_dataset():
     iris = datasets.load_iris()
     X = iris.data
     y = iris.target
-
     return X, y
 
 def train_test_split(X, y):
@@ -29,7 +28,7 @@ def init_weights(num_in, num_out):
 
     # Note that 'W' contains both weights and bias, you can consider W[0, :] as bias
     W = np.zeros((1 + num_in, num_out))
-    print("Oringnal W:", W)
+    # print("Oringnal W:", W)
     ###################################################################################
     # Full Mark: 1                                                                    #
     # TODO:                                                                           #
@@ -44,7 +43,7 @@ def init_weights(num_in, num_out):
     W[0, :] = np.random.uniform(low=-a, high=a, size=[num_out])
     # w
     W[1:, :] = np.random.uniform(low=-a, high=a, size=[num_in, num_out])
-    print("Init W:", W)
+    # print("Init W:", W)
 
     ###################################################################################
     #                       END OF YOUR CODE                                          #
@@ -103,8 +102,8 @@ def sigmoid_gradient(x):
     # Computes the gradient of the sigmoid function evaluated at x.                   #
     #                                                                                 #
     ###################################################################################
-
-    grad = x * (1 - x)
+    s = sigmoid(x)
+    grad = s * (1 - s)
 
     ###################################################################################
     #                       END OF YOUR CODE                                          #
@@ -123,8 +122,8 @@ def tanh_gradient(x):
     # Computes the gradient of the tanh function evaluated at x.                      #
     #                                                                                 #
     ###################################################################################
-
-    grad = 1 - np.square(x)
+    h = tanh(x)
+    grad = 1 - np.square(h)
 
     ###################################################################################
     #                       END OF YOUR CODE                                          #
@@ -155,12 +154,11 @@ def forward(W, X):
     # The activation function in output layer is 'sigmoid'                            #
     ###################################################################################
 
-    z_hidden = np.dot(X, W_hidden)
-    a_hidden = tanh(z_hidden)
+    z_hidden = X @ W_hidden
+    x_ = tanh(z_hidden)
+    a_hidden = np.concatenate([np.ones((len(x_), 1)), x_], axis=1)
 
-    X_ = np.concatenate([np.ones((len(a_hidden), 1)), a_hidden], axis=1)
-
-    z_output = np.dot(X_, W_output)
+    z_output = a_hidden @ W_output
     a_output = sigmoid(z_output)
 
     ###################################################################################
@@ -213,21 +211,28 @@ def loss_funtion(W, X, y, num_feature, num_hidden, num_output, L2_lambda):
     # (Hint: use chain rule, and don't forget to add the gradient of regularization term)    #
     ##########################################################################################
 
-    regularization_loss = (L2_lambda / 2*m) * (np.sum(np.square(W_hidden[1:, :].ravel())) + np.sum(np.square(W_output[1:, :].ravel())))
-    y_ = forward((W_hidden, W_output), X_input)
-    z_hidden = y_["z_hidden"]
-    a_hidden = y_["a_hidden"]
-    z_output = y_["z_output"]
-    a_output = y_["a_output"]
+    y_ = forward([W_hidden, W_output], X_input)
+    z_hidden = y_["z_hidden"] #(100, 10)
+    a_hidden = y_["a_hidden"] #(100, 11)
+    z_output = y_["z_output"] #(100, 3)
+    a_output = y_["a_output"] #(100, 3)
     y_onehot = np.zeros((y.shape[0], num_output))
     y_onehot[np.arange(y.shape[0]), y] = 1
     data_loss = -np.mean(np.multiply(y_onehot, np.log(a_output)) + np.multiply(1 - y_onehot, np.log(1 - a_output)))
+
+    regularization_loss = (L2_lambda / 2 * m) * (
+                np.sum(np.square(W_hidden[1:, :].ravel())) + np.sum(np.square(W_output[1:, :].ravel())))
     L = data_loss + regularization_loss
 
-    d_output = a_output - y_onehot
-    d_hidden = d_output @ W_output[1:, :].T * tanh_gradient(z_hidden)
-    W_output_grad = d_output.T @ a_hidden
-    W_hidden_grad = d_hidden.T @ X
+    d_output = a_output - y_onehot # (100, 3)
+    d_hidden = d_output @ W_output[1:, :].T * sigmoid_gradient(z_hidden) # (100, 10)
+    W_output_grad = (1 / m) * d_output.T @ a_hidden
+    W_hidden_grad = (1 / m) * d_hidden.T @ X_input
+
+    W_hidden[0, :] = 0 #(5, 10)
+    W_output[0, :] = 0 #(11, 3)
+    W_hidden_grad += (L2_lambda / m) * W_hidden.T
+    W_output_grad += (L2_lambda / m) * W_output.T
 
     ###################################################################################
     #                       END OF YOUR CODE                                          #
@@ -269,8 +274,9 @@ def optimize(initial_W, X, y, num_epoch, num_feature, num_hidden, num_output, L2
     def loss(w):
         return loss_funtion(w, X, y, num_feature, num_hidden, num_output, L2_lambda)
 
-    W_final = minimize(fun=loss, x0=initial_W, method='TNC', jac=True, options=options)
-
+    ret = minimize(fun=loss, x0=initial_W, method='TNC', jac=True, options=options)
+    print("ret", ret)
+    W_final  = ret.jac
     ###################################################################################
     #                       END OF YOUR CODE                                          #
     ###################################################################################
@@ -301,7 +307,8 @@ def predict(X_test, y_test, W):
     ###################################################################################
 
     y_ = forward(W, test_input)
-    pred = np.argmax(y_, axis=1)
+    a_output = y_["a_output"]
+    pred = np.argmax(a_output, axis=1)
     acc = np.sum(pred == y_test) / len(y_test)
 
     ###################################################################################
@@ -322,17 +329,13 @@ if __name__ == '__main__':
     # Load data
     X, y = load_dataset()
     X_train, X_test, y_train, y_test = train_test_split(X, y)
-    print("X_train", X_train)
-    print("y_train", y_train)
 
     # # Initialize weights
     initial_W_hidden = init_weights(NUM_FEATURE, NUM_HIDDEN_UNIT)
     initial_W_output = init_weights(NUM_HIDDEN_UNIT, NUM_OUTPUT_UNIT)
     initial_W = np.concatenate([initial_W_hidden.ravel(), initial_W_output.ravel()], axis=0)
-    print("initial_W:", initial_W)
     # Neural network learning
     W = optimize(initial_W, X_train, y_train, NUM_EPOCH, NUM_FEATURE, NUM_HIDDEN_UNIT, NUM_OUTPUT_UNIT, L2_lambda)
-    print("W:", W)
     # Predict
     acc = predict(X_test, y_test, W)
     print("Test accuracy:", acc)
