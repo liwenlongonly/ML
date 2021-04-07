@@ -1,7 +1,7 @@
 import numpy as np
 
 if __name__ == '__main__':
-   x = np.array([[1, 0, 0], [0, 0, 1], [0, 0, 1]])
+   x = np.array([[1, 2, 3], [1, 4, 5], [1, 3, 3]])
    weight = np.array([4, 2, 3])
 
    print("x:", x)

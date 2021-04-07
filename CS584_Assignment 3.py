@@ -40,8 +40,10 @@ def init_weights(num_in, num_out):
     ###################################################################################
 
     a = np.sqrt(6. / (num_in + num_out))
-    W[0, :] = np.random.uniform(low=-a, high=a, size=[num_out, num_in])
-    W[1:, :] = np.random.uniform(low=-a, high=a, size=[num_out])
+    # b
+    W[0, :] = np.random.uniform(low=-a, high=a, size=[num_out])
+    # w
+    W[1:, :] = np.random.uniform(low=-a, high=a, size=[num_in, num_out])
     print("Init W:", W)
 
     ###################################################################################
@@ -153,10 +155,10 @@ def forward(W, X):
     # The activation function in output layer is 'sigmoid'                            #
     ###################################################################################
 
-    z_hidden = np.sum(X * W_hidden, axis=1)
+    z_hidden = np.dot(X, W_hidden)
     a_hidden = tanh(z_hidden)
 
-    z_output = np.sum(a_hidden * W_output, axis=1)
+    z_output = np.dot(a_hidden, W_output)
     a_output = sigmoid(z_output)
 
     ###################################################################################
@@ -318,18 +320,14 @@ if __name__ == '__main__':
     # Load data
     X, y = load_dataset()
     X_train, X_test, y_train, y_test = train_test_split(X, y)
-    # print(X_train)
-    # print(y_train)
-    #
-    # print(X_test)
-    # print(y_test)
+    print("X_train", X_train)
+    print("y_train", y_train)
 
     # # Initialize weights
     initial_W_hidden = init_weights(NUM_FEATURE, NUM_HIDDEN_UNIT)
     initial_W_output = init_weights(NUM_HIDDEN_UNIT, NUM_OUTPUT_UNIT)
     initial_W = np.concatenate([initial_W_hidden.ravel(), initial_W_output.ravel()], axis=0)
     print("initial_W:", initial_W)
-
     # Neural network learning
     W = optimize(initial_W, X_train, y_train, NUM_EPOCH, NUM_FEATURE, NUM_HIDDEN_UNIT, NUM_OUTPUT_UNIT, L2_lambda)
     print("W:", W)
