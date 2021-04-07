@@ -10,7 +10,7 @@ class Layer:
         :param weights: 权值张量，默认类内部生成
         :param bias: 偏置，默认类内部生成
         """
-
+        self.output = n_neurons;
         # 通过正态分布初始化网络权值，初始化非常重要，不合适的初始化将导致网络不收敛
         self.weights = weights if weights is not None else np.random.randn(n_input, n_neurons) * np.sqrt(1 / n_neurons)
         self.bias = bias if bias is not None else np.random.rand(n_neurons) * 0.1

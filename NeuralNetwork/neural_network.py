@@ -53,7 +53,7 @@ class NeuralNetwork:
     def train(self, X_train, X_test, y_train, y_test, learning_rate, max_epochs):
         # 网络训练函数
         # one-hot 编码
-        y_onehot = np.zeros((y_train.shape[0], 2))
+        y_onehot = np.zeros((y_train.shape[0], self._layers[-1].output))
         y_onehot[np.arange(y_train.shape[0]), y_train] = 1
         mses = []
         for i in range(max_epochs):  # 训练1000 个epoch
