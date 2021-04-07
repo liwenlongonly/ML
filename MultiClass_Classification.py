@@ -1,102 +1,149 @@
 import numpy as np
-import matplotlib.pyplot as plt
+from scipy.io import loadmat
+import scipy.optimize as opt
+from sklearn import datasets
 
-N = 100  # 每一个类别的生成的点的数量
-D = 2  # 每个点的维度，这里使用平面，所以是2维数据
-K = 3  # 类别数量，我们一共生成3个类别的点
+input_layer_size = 4
+hidden_layer_size = 10
+num_labels = 3
 
-# 所有的样本数据，一共300个点，每个点用2个维度表示
-# 所有训练数据就是一个300*2的二维矩阵
-X = np.zeros((N * K, D))
-# 标签数据，一共是300个点，每个点对应一个类别，
-# 所以标签是一个300*1的矩阵
-y = np.zeros(N * K, dtype='uint8')
+def load_dataset():
+    iris = datasets.load_iris()
+    X = iris.data
+    y = iris.target
 
-# 生成训练数据
-for j in range(K):
-    ix = range(N * j, N * (j + 1))
-    r = np.linspace(0.0, 1, N)
-    t = np.linspace(j * 4, (j + 1) * 4, N) + np.random.randn(N) * 0.2
-    X[ix] = np.c_[r * np.sin(t), r * np.cos(t)]
-    y[ix] = j
+    return X, y
 
-plt.scatter(X[:, 0], X[:, 1], c=y, s=40, cmap=plt.cm.Spectral)
-plt.show()
+def train_test_split(X, y):
+    idx = np.arange(len(X))
+    train_size = int(len(X) * 2 / 3)
+    np.random.shuffle(idx)
+    X = X[idx]
+    y = y[idx]
+    X_train, X_test = X[:train_size], X[train_size:]
+    y_train, y_test = y[:train_size], y[train_size:]
 
-print("X:", X)
-print("Y:", y)
+    return X_train, X_test, y_train, y_test
 
-h = 10  # 隐藏层的神经元数量
+def expand_y(y):
+    """
+    设置标签值为向量 例如y[0]=6转化为y[0]=[0,0,0,0,0,1,0,0,0,0]
+    """
+    result = []
+    for i in y:
+        y_array = np.zeros(num_labels)
+        y_array[i-1] = 1
+        result.append(y_array)
+    return np.array(result)
 
-# 第一个层的权重和偏置初始化
-W1 = 0.01 * np.random.randn(D, h)
-b1 = np.zeros((1, h))
+def sigmoid(z):
+    """
+    sigmoid函数
+    """
+    return 1 / (1 + np.exp(-z))
 
-print("w1:", W1)
-print("b1:", b1)
+def feed_forward(theta, X):
+    '''得到每层的输入和输出'''
+    t1, t2 = deserialize(theta)   # 提取参数 t1是第一层到第二层的  t2是第二层到第三层的
+    a1 = X   #初始值
+    z2 = a1 @ t1.T   # X乘参数
+    a2 = np.insert(sigmoid(z2), 0, 1, axis=1)  #加a0 并且放入sigmoid函数中
+    z3 = a2 @ t2.T   #第二层到第三层
+    a3 = sigmoid(z3)
+    return a1, z2, a2, z3, a3
 
-# 第二层的权重和偏置初始化
-W2 = 0.01 * np.random.randn(h, K)
-b2 = np.zeros((1, K))
+def cost(theta, X, y):
+    a1, z2, a2, z3, h = feed_forward(theta, X)#前馈神经网络 第一层401个单元 第二层26个单元 第三层10个单元
+    J = - y * np.log(h) - (1 - y) * np.log(1 - h)    #矩阵点乘
+    return J.sum() / len(X)
 
-print("w2:", W2)
-print("b2:", b2)
+def regularized_cost(theta, X, y, l=1):
+    '''正则化时忽略每层的偏置项，也就是参数矩阵的第一列'''
+    t1, t2 = deserialize(theta)
+    reg = np.sum(t1[:,1:] ** 2) + np.sum(t2[:,1:] ** 2)    # 正则项
+    return l / (2 * len(X)) * reg + cost(theta, X, y)    # 代价函数
 
-step_size = 1e-0
-reg = 1e-3  # regularization strength
+def deserialize(seq):
+    '''
+    提取参数
+    '''
+    hidden_size = hidden_layer_size
+    input_size = input_layer_size + 1
+    return seq[:hidden_size*input_size].reshape(hidden_size, input_size), seq[hidden_size*input_size:].reshape(num_labels, hidden_size+1)
 
-# 获取训练样本数量
-num_examples = X.shape[0]
+def serialize(a, b):
+    '''
+    展开参数
+    '''
+    return np.r_[a.flatten(),b.flatten()]
 
-for i in range(10000):
+def sigmoid_gradient(z):
+    """
+    sigmoid函数求导
+    """
+    return sigmoid(z) * (1 - sigmoid(z))
 
-    # 计算第一个隐藏层的输出，使用ReLU激活函数
-    hidden_layer = np.maximum(0, np.dot(X, W1) + b1)
-    # 计算输出层的结果，也就是最终的分类得分
-    scores = np.dot(hidden_layer, W2) + b2
+def random_init(size):
+    '''从服从的均匀分布的范围中随机返回size大小的值'''
+    return np.random.uniform(-0.12, 0.12, size)
 
-    # softmax
-    exp_scores = np.exp(scores)
-    probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)  # [N x K]
 
-    # 计算损失，和之前的一样
-    correct_logprobs = -np.log(probs[range(num_examples), y])
-    data_loss = np.sum(correct_logprobs) / num_examples
-    reg_loss = 0.5 * reg * np.sum(W1 * W1) + 0.5 * reg * np.sum(W2 * W2)
-    loss = data_loss + reg_loss
+def gradient(theta, X, y):
+    '''
+    unregularized gradient, notice no d1 since the input layer has no error
+    return 所有参数theta的梯度，故梯度D(i)和参数theta(i)同shape，重要。
+    '''
+    t1, t2 = deserialize(theta)
+    a1, z2, a2, z3, h = feed_forward(theta, X)
+    d3 = h - y  # (5000, 10)
+    d2 = d3 @ t2[:, 1:] * sigmoid_gradient(z2)  # (5000, 25)
+    D2 = d3.T @ a2  # (10, 26)
+    D1 = d2.T @ a1  # (25, 401)
+    D = (1 / len(X)) * serialize(D1, D2)  # (10285,)
 
-    if i % 1000 == 0:
-        print("iteration %4d loss %f" % (i, loss))
+    return D
 
-    # 计算scores的梯度
-    dscores = probs
-    dscores[range(num_examples), y] -= 1
-    dscores /= num_examples
+def regularized_gradient(theta, X, y, l=1):
+    """
+    不惩罚偏置单元的参数   正则化神经网络
+    """
+    t1, t2 = deserialize(theta)
+    D1, D2 = deserialize(gradient(theta, X, y))
+    t1[:, 0] = 0
+    t2[:, 0] = 0
+    reg_D1 = D1 + (l / len(X)) * t1
+    reg_D2 = D2 + (l / len(X)) * t2
+    return serialize(reg_D1, reg_D2)
 
-    # 计算梯度，反向传播
-    dW2 = np.dot(hidden_layer.T, dscores)
-    db2 = np.sum(dscores, axis=0, keepdims=True)
+def nn_training(X, y):
+    size = hidden_layer_size * (input_layer_size + 1) + num_labels * (hidden_layer_size + 1)
+    init_theta = random_init(size)  # 25*401 + 10*26
 
-    # 反向传播隐藏层
-    dhidden = np.dot(dscores, W2.T)
-    # 反向传播ReLu函数
-    dhidden[hidden_layer <= 0] = 0
+    res = opt.minimize(fun=regularized_cost,
+                       x0=init_theta,
+                       args=(X, y, 1),
+                       method='TNC',
+                       jac=regularized_gradient,
+                       options={'maxiter': 400})
+    return res
 
-    dW1 = np.dot(X.T, dhidden)
-    db1 = np.sum(dhidden, axis=0, keepdims=True)
+def accuracy(theta, X, y):
+    _, _, _, _, h = feed_forward(res.x, X)
+    pred = np.argmax(h, axis=1) + 1
+    acc = np.sum(pred == y) / len(y)
+    print("acc:", acc)
 
-    # 加上正则项
-    dW2 += reg * W2
-    dW1 += reg * W1
 
-    # 更新参数
-    W1 += -step_size * dW1
-    b1 += -step_size * db1
-    W2 += -step_size * dW2
-    b2 += -step_size * db2
+if __name__ == '__main__':
 
-# 训练结束，估算正确率
-hidden_layer = np.maximum(0, np.dot(X, W1) + b1)
-scores = np.dot(hidden_layer, W2) + b2
-predicted_class = np.argmax(scores, axis=1)
-print("Training accuracy: %.2f" % (np.mean(predicted_class == y)))
+    raw_X, raw_y = load_dataset()
+    X = np.insert(raw_X, 0, 1, axis=1)  # 加一列 1 (150, 5)
+    y = expand_y(raw_y)  # (5000, 10)
+
+    # print("X:", X)
+    # print("y:", y)
+
+    res = nn_training(X, y)  # 慢
+    print(res)
+    # ——————————————4. 检验——————————————————
+    accuracy(res.x, X, raw_y)
