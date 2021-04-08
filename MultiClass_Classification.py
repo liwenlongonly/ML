@@ -43,12 +43,12 @@ def tanh_gradient(x):
 
 def feed_forward(theta, X):
     '''得到每层的输入和输出'''
-    t1, t2 = deserialize(theta)   # 提取参数 t1是第一层到第二层的  t2是第二层到第三层的
-    a1 = X   #初始值
-    z2 = a1 @ t1.T   # X乘参数
-    a2 = np.insert(tanh(z2), 0, 1, axis=1)  #加a0 并且放入sigmoid函数中
-    z3 = a2 @ t2.T   #第二层到第三层
-    a3 = sigmoid(z3)
+    t1, t2 = deserialize(theta)  # 提取参数 t1(10, 5)是第一层到第二层的  t2(3, 11)是第二层到第三层的
+    a1 = X   #初始值 (100, 5)
+    z2 = a1 @ t1   # X乘参数 (100, 10)
+    a2 = np.insert(tanh(z2), 0, 1, axis=1)  #加a0 并且放入sigmoid函数中 (100, 11)
+    z3 = a2 @ t2   #第二层到第三层 (100, 3)
+    a3 = sigmoid(z3) #(100, 3)
     return a1, z2, a2, z3, a3
 
 def cost(theta, X, y):
@@ -58,10 +58,10 @@ def cost(theta, X, y):
 
 def regularized_cost(theta, X, y, l=1):
     '''正则化时忽略每层的偏置项，也就是参数矩阵的第一列'''
-    t1, t2 = deserialize(theta)
-    reg = np.sum(t1[:, 1:] ** 2) + np.sum(t2[:, 1:] ** 2)    # 正则项
+    t1, t2 = deserialize(theta) #t1:(10, 5) t2:(3, 11)
+    reg = np.sum(t1[1:, :] ** 2) + np.sum(t2[1:, :] ** 2)    # 正则项
     loss = l / (2 * len(X)) * reg + cost(theta, X, y)  # 代价函数
-    # print("loss:", loss)
+    print("loss:", loss, " reg:", reg)
     return loss
 
 def deserialize(seq):
@@ -70,13 +70,13 @@ def deserialize(seq):
     '''
     hidden_size = hidden_layer_size
     input_size = input_layer_size + 1
-    return seq[:hidden_size*input_size].reshape(hidden_size, input_size), seq[hidden_size*input_size:].reshape(num_labels, hidden_size+1)
+    return seq[:hidden_size*input_size].reshape(input_size, hidden_size), seq[hidden_size*input_size:].reshape(hidden_size+1, num_labels)
 
 def serialize(a, b):
     '''
     展开参数
     '''
-    return np.r_[a.flatten(),b.flatten()]
+    return np.r_[a.flatten(), b.flatten()]
 
 def random_init(size):
     '''从服从的均匀分布的范围中随机返回size大小的值'''
@@ -88,13 +88,13 @@ def gradient(theta, X, y):
     unregularized gradient, notice no d1 since the input layer has no error
     return 所有参数theta的梯度，故梯度D(i)和参数theta(i)同shape，重要。
     '''
-    t1, t2 = deserialize(theta) # t1:(5, 10) t2:(11, 3)
+    t1, t2 = deserialize(theta) # t1:(10, 5) t2:(3, 11)
     a1, z2, a2, z3, h = feed_forward(theta, X)
-    # a1:(100, 5) z2:(100, 10) a2:(100, 11) z3:(100, 3)
-    d3 = h - y  # (150, 3)
-    d2 = d3 @ t2[:, 1:] * tanh_gradient(z2)  # (100, 10)
-    D2 = d3.T @ a2  # (3, 11)
-    D1 = d2.T @ a1  # (10, 5)
+    # a1:(100, 5) z2:(100, 10) a2:(100, 11) z3:(100, 3) h:(10, 3)
+    d3 = h - y  # (100, 3)
+    d2 = d3 @ t2[1:, :].T * tanh_gradient(z2)  # (100, 10)
+    D2 = a2.T @ d3  # (3, 11)
+    D1 = a1.T @ d2  # (10, 5)
     D = (1 / len(X)) * serialize(D1, D2)  # (83,)
 
     return D
@@ -103,7 +103,7 @@ def regularized_gradient(theta, X, y, l=1):
     """
     不惩罚偏置单元的参数   正则化神经网络
     """
-    t1, t2 = deserialize(theta)
+    t1, t2 = deserialize(theta) # t1(10, 5) t2:(3, 11)
     D1, D2 = deserialize(gradient(theta, X, y))
     t1[0, :] = 0
     t2[0, :] = 0
@@ -114,6 +114,7 @@ def regularized_gradient(theta, X, y, l=1):
 def nn_training(X, y):
     size = hidden_layer_size * (input_layer_size + 1) + num_labels * (hidden_layer_size + 1)
     init_theta = random_init(size) #
+    print("init_theta:", init_theta)
 
     res = opt.minimize(fun=regularized_cost,
                        x0=init_theta,

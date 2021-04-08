@@ -157,7 +157,6 @@ def forward(W, X):
     z_hidden = X @ W_hidden
     x_ = tanh(z_hidden)
     a_hidden = np.concatenate([np.ones((len(x_), 1)), x_], axis=1)
-
     z_output = a_hidden @ W_output
     a_output = sigmoid(z_output)
 
@@ -220,19 +219,18 @@ def loss_funtion(W, X, y, num_feature, num_hidden, num_output, L2_lambda):
     y_onehot[np.arange(y.shape[0]), y] = 1
     data_loss = -np.mean(np.multiply(y_onehot, np.log(a_output)) + np.multiply(1 - y_onehot, np.log(1 - a_output)))
 
-    regularization_loss = (L2_lambda / 2 * m) * (
-                np.sum(np.square(W_hidden[1:, :].ravel())) + np.sum(np.square(W_output[1:, :].ravel())))
+    regularization_loss = (L2_lambda / 2 * m) * np.sum(np.square(np.concatenate([W_hidden[1:, :].ravel(), W_output[1:, :].ravel()])))
     L = data_loss + regularization_loss
 
     d_output = a_output - y_onehot # (100, 3)
     d_hidden = d_output @ W_output[1:, :].T * sigmoid_gradient(z_hidden) # (100, 10)
-    W_output_grad = (1 / m) * d_output.T @ a_hidden
-    W_hidden_grad = (1 / m) * d_hidden.T @ X_input
+    W_output_grad = (1 / m) * a_hidden.T @ d_output
+    W_hidden_grad = (1 / m) * X_input.T @ d_hidden
 
-    W_hidden[0, :] = 0 #(5, 10)
     W_output[0, :] = 0 #(11, 3)
-    W_hidden_grad += (L2_lambda / m) * W_hidden
+    W_hidden[0, :] = 0  # (5, 10)
     W_output_grad += (L2_lambda / m) * W_output
+    W_hidden_grad += (L2_lambda / m) * W_hidden
 
     ###################################################################################
     #                       END OF YOUR CODE                                          #
