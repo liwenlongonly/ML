@@ -80,7 +80,8 @@ def serialize(a, b):
 
 def random_init(size):
     '''从服从的均匀分布的范围中随机返回size大小的值'''
-    return np.random.uniform(-0.12, 0.12, size)
+    a = np.sqrt(6. / size)
+    return np.random.uniform(-a, a, size)
 
 
 def gradient(theta, X, y):
@@ -107,9 +108,9 @@ def regularized_gradient(theta, X, y, l=1):
     D1, D2 = deserialize(gradient(theta, X, y))
     t1[0, :] = 0
     t2[0, :] = 0
-    reg_D1 = D1 + (l / len(X)) * t1
-    reg_D2 = D2 + (l / len(X)) * t2
-    return serialize(reg_D1, reg_D2)
+    D1 += (l / len(X)) * t1
+    D2 += (l / len(X)) * t2
+    return serialize(D1, D2)
 
 def nn_training(X, y):
     size = hidden_layer_size * (input_layer_size + 1) + num_labels * (hidden_layer_size + 1)

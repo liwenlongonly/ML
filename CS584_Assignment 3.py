@@ -38,12 +38,12 @@ def init_weights(num_in, num_out):
     # https://www.tensorflow.org/api_docs/python/tf/keras/initializers/GlorotNormal   #
     ###################################################################################
 
-    a = np.sqrt(6. / (num_in + num_out))
     # b
-    W[0, :] = np.random.uniform(low=-a, high=a, size=[num_out])
+    b = np.sqrt(6. / num_out)
+    W[0, :] = np.random.uniform(low=-b, high=b, size=[num_out])
     # w
-    W[1:, :] = np.random.uniform(low=-a, high=a, size=[num_in, num_out])
-    # print("Init W:", W)
+    w = np.sqrt(6. / (num_in + num_out))
+    W[1:, :] = np.random.uniform(low=-w, high=w, size=[num_in, num_out])
 
     ###################################################################################
     #                       END OF YOUR CODE                                          #
@@ -217,15 +217,16 @@ def loss_funtion(W, X, y, num_feature, num_hidden, num_output, L2_lambda):
     a_output = y_["a_output"] #(100, 3)
     y_onehot = np.zeros((y.shape[0], num_output))
     y_onehot[np.arange(y.shape[0]), y] = 1
-    data_loss = -np.mean(np.multiply(y_onehot, np.log(a_output)) + np.multiply(1 - y_onehot, np.log(1 - a_output)))
 
-    regularization_loss = (L2_lambda / 2 * m) * np.sum(np.square(np.concatenate([W_hidden[1:, :].ravel(), W_output[1:, :].ravel()])))
+    data_loss = np.mean(-y_onehot * np.log(a_output) - (1 - y_onehot) * np.log(1 - a_output))
+
+    regularization_loss = (L2_lambda / (2 * m)) * np.sum(np.square(np.concatenate([W_hidden[1:, :].ravel(), W_output[1:, :].ravel()])))
     L = data_loss + regularization_loss
     print("loss:", L, " regularization_loss:", regularization_loss)
     d_output = a_output - y_onehot # (100, 3)
-    d_hidden = d_output @ W_output[1:, :].T * sigmoid_gradient(z_hidden) # (100, 10)
-    W_output_grad = (1 / m) * a_hidden.T @ d_output
-    W_hidden_grad = (1 / m) * X_input.T @ d_hidden
+    d_hidden = d_output @ W_output[1:, :].T * tanh_gradient(z_hidden) # (100, 10)
+    W_output_grad = (1 / m) * a_hidden.T @ d_output # (11, 3)
+    W_hidden_grad = (1 / m) * X_input.T @ d_hidden # (5, 10)
 
     W_output[0, :] = 0 #(11, 3)
     W_hidden[0, :] = 0  # (5, 10)
@@ -274,7 +275,7 @@ def optimize(initial_W, X, y, num_epoch, num_feature, num_hidden, num_output, L2
 
     ret = minimize(fun=loss, x0=initial_W, method='TNC', jac=True, options=options)
     print("ret", ret)
-    W_final  = ret.jac
+    W_final  = ret.x
     ###################################################################################
     #                       END OF YOUR CODE                                          #
     ###################################################################################
