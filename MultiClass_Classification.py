@@ -43,7 +43,7 @@ def tanh_gradient(x):
 
 def feed_forward(theta, X):
     '''得到每层的输入和输出'''
-    t1, t2 = deserialize(theta)  # 提取参数 t1(10, 5)是第一层到第二层的  t2(3, 11)是第二层到第三层的
+    t1, t2 = deserialize(theta)  # 提取参数 t1(5, 10)是第一层到第二层的  t2(11, 3)是第二层到第三层的
     a1 = X   #初始值 (100, 5)
     z2 = a1 @ t1   # X乘参数 (100, 10)
     a2 = np.insert(tanh(z2), 0, 1, axis=1)  #加a0 并且放入sigmoid函数中 (100, 11)
@@ -52,13 +52,13 @@ def feed_forward(theta, X):
     return a1, z2, a2, z3, a3
 
 def cost(theta, X, y):
-    a1, z2, a2, z3, h = feed_forward(theta, X)#前馈神经网络 第一层401个单元 第二层26个单元 第三层10个单元
-    J = - y * np.log(h) - (1 - y) * np.log(1 - h)    #矩阵点乘
+    a1, z2, a2, z3, h = feed_forward(theta, X)#前馈神经网络
+    J = - y * np.log(h) - (1 - y) * np.log(1 - h) #矩阵点乘
     return J.sum() / len(X)
 
 def regularized_cost(theta, X, y, l=1):
     '''正则化时忽略每层的偏置项，也就是参数矩阵的第一列'''
-    t1, t2 = deserialize(theta) #t1:(10, 5) t2:(3, 11)
+    t1, t2 = deserialize(theta) #t1:(5, 10) t2:(11, 3)
     reg = np.sum(t1[1:, :] ** 2) + np.sum(t2[1:, :] ** 2)    # 正则项
     loss = l / (2 * len(X)) * reg + cost(theta, X, y)  # 代价函数
     print("loss:", loss, " reg:", reg)
@@ -88,13 +88,13 @@ def gradient(theta, X, y):
     unregularized gradient, notice no d1 since the input layer has no error
     return 所有参数theta的梯度，故梯度D(i)和参数theta(i)同shape，重要。
     '''
-    t1, t2 = deserialize(theta) # t1:(10, 5) t2:(3, 11)
+    t1, t2 = deserialize(theta) # t1:(5, 10) t2:(11, 3)
     a1, z2, a2, z3, h = feed_forward(theta, X)
-    # a1:(100, 5) z2:(100, 10) a2:(100, 11) z3:(100, 3) h:(10, 3)
+    # a1:(100, 5) z2:(100, 10) a2:(100, 11) z3:(100, 3) h:(100, 3)
     d3 = h - y  # (100, 3)
     d2 = d3 @ t2[1:, :].T * tanh_gradient(z2)  # (100, 10)
-    D2 = a2.T @ d3  # (3, 11)
-    D1 = a1.T @ d2  # (10, 5)
+    D2 = a2.T @ d3  # (11, 3)
+    D1 = a1.T @ d2  # (5, 10)
     D = (1 / len(X)) * serialize(D1, D2)  # (83,)
 
     return D
@@ -103,7 +103,7 @@ def regularized_gradient(theta, X, y, l=1):
     """
     不惩罚偏置单元的参数   正则化神经网络
     """
-    t1, t2 = deserialize(theta) # t1(10, 5) t2:(3, 11)
+    t1, t2 = deserialize(theta) # t1(5, 10) t2:(11, 3)
     D1, D2 = deserialize(gradient(theta, X, y))
     t1[0, :] = 0
     t2[0, :] = 0

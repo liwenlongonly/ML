@@ -221,7 +221,7 @@ def loss_funtion(W, X, y, num_feature, num_hidden, num_output, L2_lambda):
 
     regularization_loss = (L2_lambda / 2 * m) * np.sum(np.square(np.concatenate([W_hidden[1:, :].ravel(), W_output[1:, :].ravel()])))
     L = data_loss + regularization_loss
-
+    print("loss:", L, " regularization_loss:", regularization_loss)
     d_output = a_output - y_onehot # (100, 3)
     d_hidden = d_output @ W_output[1:, :].T * sigmoid_gradient(z_hidden) # (100, 10)
     W_output_grad = (1 / m) * a_hidden.T @ d_output
