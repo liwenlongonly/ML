@@ -110,19 +110,19 @@ def regularized_gradient(theta, X, y, l=1):
     t2[0, :] = 0
     D1 += (l / len(X)) * t1
     D2 += (l / len(X)) * t2
+    print("D!:", D1)
     return serialize(D1, D2)
 
 def nn_training(X, y):
     size = hidden_layer_size * (input_layer_size + 1) + num_labels * (hidden_layer_size + 1)
     init_theta = random_init(size) #
-    print("init_theta:", init_theta)
 
     res = opt.minimize(fun=regularized_cost,
                        x0=init_theta,
                        args=(X, y, 1),
                        method='TNC',
                        jac=regularized_gradient,
-                       options={'maxiter': 400})
+                       options={'maxiter': 100})
     return res
 
 def accuracy(theta, X, y):
