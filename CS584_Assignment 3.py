@@ -221,12 +221,10 @@ def loss_funtion(W, X, y, num_feature, num_hidden, num_output, L2_lambda):
     y_onehot[np.arange(y.shape[0]), y] = 1
 
     data_loss = -np.mean(np.multiply(y_onehot, np.log(a_output)) + np.multiply(1 - y_onehot, np.log(1 - a_output)))
-
     regularization = np.sum(np.square(np.concatenate([W_hidden[1:, :].ravel(), W_output[1:, :].ravel()])))
 
     L = data_loss + (L2_lambda / (2 * m)) * regularization
 
-    print("loss:", L, " regularization_loss:", regularization)
     d_output = a_output - y_onehot # (100, 3)
     d_hidden = d_output @ W_output[1:, :].T * tanh_gradient(z_hidden) # (100, 10)
     W_output_grad = (1 / m) * a_hidden.T @ d_output # (11, 3)
@@ -277,7 +275,7 @@ def optimize(initial_W, X, y, num_epoch, num_feature, num_hidden, num_output, L2
     def loss(w):
         return loss_funtion(w, X, y, num_feature, num_hidden, num_output, L2_lambda)
 
-    ret = minimize(fun=loss, x0=initial_W, method='TNC', jac=True, options=options)
+    ret = minimize(fun=loss, x0=initial_W, method="SLSQP", jac=True, options=options)
     print("ret", ret)
     W_final  = ret.x
     ###################################################################################
