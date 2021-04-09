@@ -28,7 +28,7 @@ def init_weights(num_in, num_out):
 
     # Note that 'W' contains both weights and bias, you can consider W[0, :] as bias
     W = np.zeros((1 + num_in, num_out))
-    # print("Oringnal W:", W)
+
     ###################################################################################
     # Full Mark: 1                                                                    #
     # TODO:                                                                           #
@@ -39,8 +39,11 @@ def init_weights(num_in, num_out):
     ###################################################################################
 
     # b
-    a = np.sqrt(6. / (W.shape[0] * W.shape[1]))
-    W = np.random.uniform(-a, a, [W.shape[0], W.shape[1]])
+    b = np.sqrt(6. / num_out)
+    W[0, :] = np.random.uniform(low=-b, high=b, size=[num_out])
+    # w
+    w = np.sqrt(6. / (num_in + num_out))
+    W[1:, :] = np.random.uniform(low=-w, high=w, size=[num_in, num_out])
 
     ###################################################################################
     #                       END OF YOUR CODE                                          #
@@ -99,6 +102,7 @@ def sigmoid_gradient(x):
     # Computes the gradient of the sigmoid function evaluated at x.                   #
     #                                                                                 #
     ###################################################################################
+
     s = sigmoid(x)
     grad = s * (1 - s)
 
@@ -119,6 +123,7 @@ def tanh_gradient(x):
     # Computes the gradient of the tanh function evaluated at x.                      #
     #                                                                                 #
     ###################################################################################
+
     h = tanh(x)
     grad = 1 - np.square(h)
 
@@ -215,11 +220,13 @@ def loss_funtion(W, X, y, num_feature, num_hidden, num_output, L2_lambda):
     y_onehot = np.zeros((y.shape[0], num_output))
     y_onehot[np.arange(y.shape[0]), y] = 1
 
-    data_loss = -y_onehot * np.log(a_output) - (1 - y_onehot) * np.log(1 - a_output)
-    regularization =  np.sum(W_output[1:, :] ** 2) + np.sum(W_hidden[1:, :] ** 2)
-    L = data_loss.sum() / m + L2_lambda / (2 * m) * regularization
-    print("loss:", L, " regularization_loss:", regularization)
+    data_loss = -np.mean(np.multiply(y_onehot, np.log(a_output)) + np.multiply(1 - y_onehot, np.log(1 - a_output)))
 
+    regularization = np.sum(np.square(np.concatenate([W_hidden[1:, :].ravel(), W_output[1:, :].ravel()])))
+
+    L = data_loss + (L2_lambda / (2 * m)) * regularization
+
+    print("loss:", L, " regularization_loss:", regularization)
     d_output = a_output - y_onehot # (100, 3)
     d_hidden = d_output @ W_output[1:, :].T * tanh_gradient(z_hidden) # (100, 10)
     W_output_grad = (1 / m) * a_hidden.T @ d_output # (11, 3)
@@ -267,12 +274,10 @@ def optimize(initial_W, X, y, num_epoch, num_feature, num_hidden, num_output, L2
     # That is why we unroll the initial weights into a single long vector.                    #
     ###########################################################################################
 
-    ret = minimize(fun=loss_funtion,
-                   x0=initial_W,
-                   args=(X, y, num_feature, num_hidden, num_output, L2_lambda),
-                   method='TNC',
-                   jac=True,
-                   options=options)
+    def loss(w):
+        return loss_funtion(w, X, y, num_feature, num_hidden, num_output, L2_lambda)
+
+    ret = minimize(fun=loss, x0=initial_W, method='TNC', jac=True, options=options)
     print("ret", ret)
     W_final  = ret.x
     ###################################################################################
@@ -307,7 +312,6 @@ def predict(X_test, y_test, W):
     y_ = forward(W, test_input)
     a_output = y_["a_output"]
     pred = np.argmax(a_output, axis=1)
-    print("pred:", pred)
     acc = np.sum(pred == y_test) / len(y_test)
 
     ###################################################################################
