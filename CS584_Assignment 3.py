@@ -219,8 +219,11 @@ def loss_funtion(W, X, y, num_feature, num_hidden, num_output, L2_lambda):
     a_output = y_["a_output"] #(100, 3)
     y_onehot = np.zeros((y.shape[0], num_output))
     y_onehot[np.arange(y.shape[0]), y] = 1
-
-    data_loss = -np.mean(np.multiply(y_onehot, np.log(a_output)) + np.multiply(1 - y_onehot, np.log(1 - a_output)))
+    data_loss = 0.0
+    if np.sum(1 - a_output < 1e-10) != 0:
+        data_loss = np.inf
+    else:
+        data_loss = -np.mean(np.multiply(y_onehot, np.log(a_output)) + np.multiply(1 - y_onehot, np.log(1 - a_output)))
     regularization = np.sum(np.square(np.concatenate([W_hidden[1:, :].ravel(), W_output[1:, :].ravel()])))
 
     L = data_loss + (L2_lambda / (2 * m)) * regularization
