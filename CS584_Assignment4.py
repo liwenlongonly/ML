@@ -328,10 +328,10 @@ if __name__ == '__main__':
     net = TwoLayerCNN(input_size, hidden_size, num_classes, std=1e-1)
     # TODO
     ret = net.train(X_train, y_train, X_val, y_val,
-                    learning_rate=1e-3,
-                    learning_rate_decay=0.99,
-                    reg=5e-6,
-                    num_iters=2000,
+                    learning_rate=2e-3,
+                    learning_rate_decay=0.999,
+                    reg=2e-6,
+                    num_iters=10000,
                     verbose=True)
     acc = (net.predict(X_test) == y_test).mean()
     print("the test accuracy:", acc)
