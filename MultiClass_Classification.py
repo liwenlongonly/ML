@@ -26,21 +26,15 @@ plt.show()
 print("X:", X)
 print("Y:", y)
 
-h = 500  # 隐藏层的神经元数量
+h = 100  # 隐藏层的神经元数量
 
 # 第一个层的权重和偏置初始化
 W1 = 0.01 * np.random.randn(D, h)
 b1 = np.zeros((1, h))
 
-print("w1:", W1)
-print("b1:", b1)
-
 # 第二层的权重和偏置初始化
 W2 = 0.01 * np.random.randn(h, K)
 b2 = np.zeros((1, K))
-
-print("w2:", W2)
-print("b2:", b2)
 
 step_size = 1e-0
 reg = 1e-3  # regularization strength

@@ -104,7 +104,10 @@ class TwoLayerCNN(object):
 
         # Using ReLUs as the Activation Function
 
-        scores = 0
+        # 计算第一个隐藏层的输出，使用ReLU激活函数
+        hidden_layer = np.maximum(0, np.dot(X, W1) + b1)
+        # 计算输出层的结果，也就是最终的分类得分
+        scores = np.dot(hidden_layer, W2) + b2
 
         #############################################################################
         #                              END OF YOUR CODE                             #
@@ -127,7 +130,15 @@ class TwoLayerCNN(object):
         # classifier loss.                                                          #
         #############################################################################
 
-        loss = 0
+        # softmax
+        exp_scores = np.exp(scores)
+        probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)  # [N x K]
+
+        # 计算损失，和之前的一样
+        correct_logprobs = -np.log(probs[range(N), y])
+        data_loss = np.sum(correct_logprobs) / N
+        reg_loss = 0.5 * reg * np.sum(W1 * W1) + 0.5 * reg * np.sum(W2 * W2)
+        loss = data_loss + reg_loss
 
         #############################################################################
         #                              END OF YOUR CODE                             #
@@ -141,20 +152,30 @@ class TwoLayerCNN(object):
         # and biases. Store the results in the grads dictionary. For example,       #
         # grads['W1'] should store the gradient on W1, and be a matrix of same size #
         #############################################################################
+        # 计算scores的梯度
+        dscores = probs
+        dscores[range(N), y] -= 1
+        dscores /= N
 
         # W2 gradient
-        dW2 = 0
+        dW2 = np.dot(hidden_layer.T, dscores)
 
         # b2 gradient
-        db2 = 0
+        db2 = np.sum(dscores, axis=0)
 
+        # 反向传播隐藏层
+        dhidden = np.dot(dscores, W2.T)
+        # 反向传播ReLu函数
+        dhidden[hidden_layer <= 0] = 0
         # W1 gradient
-        dW1 = 0
-
+        dW1 = np.dot(X.T, dhidden)
         # b1 gradient
-        db1 = 0
+        db1 = np.sum(dhidden, axis=0)
 
         # regularization gradient
+        # 加上正则项
+        dW2 += reg * W2
+        dW1 += reg * W1
 
         # store the results in the grads dictionary
         grads = {'W1': dW1, 'b1': db1, 'W2': dW2, 'b2': db2}
@@ -203,8 +224,10 @@ class TwoLayerCNN(object):
             # respectively.                                                         #
             #########################################################################
 
-            X_batch = 0
-            y_batch = 0
+            # 从X中随机选取batch_size个元素
+            idx = np.random.choice(range(num_train), batch_size if batch_size < num_train else num_train, replace=False)
+            X_batch = X[idx, :]
+            y_batch = y[idx]
 
             #########################################################################
             #                             END OF YOUR CODE                          #
@@ -222,10 +245,10 @@ class TwoLayerCNN(object):
             # stored in the grads dictionary defined above.                         #
             #########################################################################
 
-            self.params['W1'] = 0
-            self.params['W2'] = 0
-            self.params['b1'] = 0
-            self.params['b2'] = 0
+            self.params['W1'] += -learning_rate * grads["W1"]
+            self.params['W2'] += -learning_rate * grads["W2"]
+            self.params['b1'] += -learning_rate * grads["b1"]
+            self.params['b2'] += -learning_rate * grads["b2"]
 
             #########################################################################
             #                             END OF YOUR CODE                          #
@@ -272,7 +295,13 @@ class TwoLayerCNN(object):
         # TODO: Implement this function                                           #
         ###########################################################################
 
-        y_pred = 0
+        scores = self.loss(X)
+
+        # softmax
+        exp_scores = np.exp(scores)
+        probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)  # [N x K]
+        # 反向onehot
+        y_pred = np.argmax(probs, axis=1)
 
         ###########################################################################
         #                              END OF YOUR CODE                           #
@@ -285,8 +314,7 @@ if __name__ == '__main__':
     # To check your implementations.
     X, y = load_dataset()
     X_train, y_train, X_val, y_val, X_test, y_test = train_test_split(X, y)
-    print("X_train:", X_train)
-    print("y_train:", y_train)
+
     ###########################################################################
     # Full Mark: 1                                                            #
     # TODO: 1. Using TwoLayerCNN to train on given datasets                   #
@@ -294,16 +322,20 @@ if __name__ == '__main__':
     #       3. Print out the test accuracy                                    #
     ###########################################################################
 
-    input_size = 4
-    hidden_size = 10
+    input_size = X.shape[1]
+    hidden_size = 1000
     num_classes = 3
-    net = TwoLayerCNN(input_size, hidden_size, num_classes)
+    net = TwoLayerCNN(input_size, hidden_size, num_classes, std=1e-1)
     # TODO
-    net.train(X_train, y_train, X_val, y_val)
-    y_pre = net.predict(X_test)
-    pred = np.argmax(y_pre, axis=1)
-    acc = np.sum(pred == y_test) / len(y_test)
+    ret = net.train(X_train, y_train, X_val, y_val,
+                    learning_rate=1e-3,
+                    learning_rate_decay=0.99,
+                    reg=5e-6,
+                    num_iters=2000,
+                    verbose=True)
+    acc = (net.predict(X_test) == y_test).mean()
     print("the test accuracy:", acc)
+
     ###########################################################################
     #                              END OF YOUR CODE                           #
     ###########################################################################
@@ -312,6 +344,11 @@ if __name__ == '__main__':
     # Full Mark: 0.5                                                          #
     # TODO: Plot Classification accuracy history, compare train/val accuracy  #
     ###########################################################################
+
+    train_acc_history = ret["train_acc_history"]
+    plt.plot(range(len(train_acc_history)), train_acc_history, color='r', label='train accuracy')
+    val_acc_history = ret["val_acc_history"]
+    plt.plot(range(len(val_acc_history)), val_acc_history, color='b', label='val accuracy')
 
     ###########################################################################
     #                              END OF YOUR CODE                           #
