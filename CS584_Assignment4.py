@@ -331,7 +331,7 @@ if __name__ == '__main__':
                     learning_rate=2e-3,
                     learning_rate_decay=0.999,
                     reg=2e-6,
-                    num_iters=10000,
+                    num_iters=8000,
                     verbose=True)
     acc = (net.predict(X_test) == y_test).mean()
     print("the test accuracy:", acc)
