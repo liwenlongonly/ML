@@ -208,7 +208,7 @@ class TwoLayerCNN(object):
         - verbose: boolean; if true print progress during optimization.
         """
         num_train = X.shape[0]
-        iterations_per_epoch = max(num_train / batch_size, 1)
+        iterations_per_epoch = (int)(max(num_train / batch_size, 1))
 
         # Use SGD to optimize the parameters in self.model
         loss_history = []
@@ -262,6 +262,7 @@ class TwoLayerCNN(object):
                 # Check accuracy
                 train_acc = (self.predict(X_batch) == y_batch).mean()
                 val_acc = (self.predict(X_val) == y_val).mean()
+                # print("train_acc", train_acc, "val_acc ", val_acc)
                 train_acc_history.append(train_acc)
                 val_acc_history.append(val_acc)
 
@@ -325,20 +326,35 @@ if __name__ == '__main__':
     input_size = X.shape[1]
     hidden_size = 1000
     num_classes = 3
-    net = TwoLayerCNN(input_size, hidden_size, num_classes, std=1e-1)
+    net = TwoLayerCNN(input_size, hidden_size, num_classes, std=8e-2)
     # TODO
     ret = net.train(X_train, y_train, X_val, y_val,
-                    learning_rate=2e-3,
-                    learning_rate_decay=0.999,
-                    reg=2e-6,
-                    num_iters=8000,
+                    learning_rate=1e-2,
+                    learning_rate_decay=0.9999,
+                    reg=6e-5,
+                    num_iters=5000,
                     verbose=True)
+    print("final loss:", ret["loss_history"][-1])
     acc = (net.predict(X_test) == y_test).mean()
     print("the test accuracy:", acc)
 
     ###########################################################################
     #                              END OF YOUR CODE                           #
     ###########################################################################
+    ###########################################################################
+    # Full Mark: 0.5                                                          #
+    # TODO: Plot training loss history                                        #
+    ###########################################################################
+    loss_history = ret["loss_history"]
+    plt.plot(range(len(loss_history)), loss_history, color='r', label='loss')
+    ###########################################################################
+    #                              END OF YOUR CODE                           #
+    ###########################################################################
+
+    plt.xlabel('iteration')
+    plt.ylabel('training loss')
+    plt.title('Training Loss history')
+    plt.show()
 
     ###########################################################################
     # Full Mark: 0.5                                                          #
@@ -367,7 +383,13 @@ if __name__ == '__main__':
     # strength and so on). Is your result good? Does it look underfiting?         #
     # Overfiting?                                                                 #
     ###############################################################################
-
+    # hidden_size = 1000
+    # net = TwoLayerCNN(input_size, hidden_size, num_classes, std=1e-1)
+    # ret = net.train(X_train, y_train, X_val, y_val,
+    #                 learning_rate=2e-3,
+    #                 learning_rate_decay=0.999,
+    #                 reg=2e-6,
+    #                 num_iters=8000)
     ###############################################################################
     #                              END OF YOUR CODE                               #
     ###############################################################################
