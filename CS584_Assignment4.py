@@ -384,12 +384,14 @@ if __name__ == '__main__':
     # Overfiting?                                                                 #
     ###############################################################################
     # hidden_size = 1000
-    # net = TwoLayerCNN(input_size, hidden_size, num_classes, std=1e-1)
+    # net = TwoLayerCNN(input_size, hidden_size, num_classes, std=8e-2)
+    # TODO
     # ret = net.train(X_train, y_train, X_val, y_val,
-    #                 learning_rate=2e-3,
-    #                 learning_rate_decay=0.999,
-    #                 reg=2e-6,
-    #                 num_iters=8000)
+    #                 learning_rate=1e-2,
+    #                 learning_rate_decay=0.9999,
+    #                 reg=6e-5,
+    #                 num_iters=5000,
+    #                 verbose=True)
     ###############################################################################
     #                              END OF YOUR CODE                               #
     ###############################################################################
